@@ -1,24 +1,37 @@
 import React, { useState, useCallback } from "react";
-import noDataImg from "./assets/nodata.png";
+import qrCode from "./assets/qrCode.png";
+import errorImg from "./assets/error.png";
 
 const App = () => {
   const [inputValue, setInputValue] = useState("");
   const [altText, setAltText] = useState("No data");
-  const [imageUrl, setImageUrl] = useState(noDataImg);
+  const [imageUrl, setImageUrl] = useState(qrCode);
+  const [error, setError] = useState("");
 
-  const generateQrCode = useCallback(() => {
+  const generateQrCode = useCallback(async () => {
     if (!inputValue) return;
-    setImageUrl(
-      `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(
+    const response = await fetch(
+      `https://api.qrserver.com/v1/create-qr-code?size=500x500&data=${encodeURIComponent(
         inputValue
       )}`
-    );
+    )
+      .then((res) => res)
+      .catch(() => {
+        setError("Something went wrong :(");
+        setAltText("Error");
+        setImageUrl(errorImg);
+      });
+
+    const res = await response.blob();
+    const url = URL.createObjectURL(res);
+    setImageUrl(url);
     setAltText(`Qr code for ${inputValue}`);
+    setError("");
   }, [inputValue]);
 
   const resetQrCode = () => {
     setInputValue("");
-    setImageUrl(noDataImg);
+    setImageUrl(qrCode);
     setAltText("No data");
   };
 
@@ -42,6 +55,7 @@ const App = () => {
             <img src={imageUrl} alt={altText} onClick={downloadImage} />
           )}
         </div>
+        <p className={`${error ? "error-occured" : "no-error"}`}>{error}</p>
         <div className="form">
           <input
             type="text"
